@@ -1,0 +1,17 @@
+{
+  "name": "puppeteer-example",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "micro",
+    "dev": "micro-dev"
+  },
+  "dependencies": {
+    "micro": "^9.3.4",
+    "puppeteer": "^1.17.0"
+  },
+  "devDependencies": {
+    "micro-dev": "^3.0.0"
+  }
+}
