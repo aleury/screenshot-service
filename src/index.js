@@ -1,8 +1,8 @@
 const { json } = require("micro");
 const { Cluster } = require("puppeteer-cluster");
 
-let cluster;
-require("events").EventEmitter.defaultMaxListeners = 10;
+const MAX_CONCURRENT = 5;
+require("events").EventEmitter.defaultMaxListeners = MAX_CONCURRENT;
 
 const computeScrollHeight = async page => {
   const aHandle = await page.evaluateHandle(() => document.body);
@@ -13,27 +13,11 @@ const computeScrollHeight = async page => {
   return await scrollHeightHandle.jsonValue();
 };
 
-const catchErrors = fn => async (req, res) => {
-  try {
-    const result = await fn(req);
-    res.end(result);
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-module.exports = catchErrors(async req => {
-  const { html, ...rest } = await json(req);
-  return await cluster.execute({
-    ...rest,
-    html: html.replace(/\\n/g, "").replace(/\\/g, "")
-  });
-});
+let cluster;
 
 (async () => {
   cluster = await Cluster.launch({
-    monitor: true,
-    maxConcurrency: 5,
+    maxConcurrency: MAX_CONCURRENT,
     concurrency: Cluster.CONCURRENCY_BROWSER
   });
 
@@ -51,3 +35,20 @@ module.exports = catchErrors(async req => {
     await cluster.close();
   });
 })();
+
+const catchErrors = fn => async (req, res) => {
+  try {
+    const result = await fn(req);
+    res.end(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+module.exports = catchErrors(async req => {
+  const { html, ...rest } = await json(req);
+  return await cluster.execute({
+    ...rest,
+    html: html.replace(/\\n/g, "").replace(/\\/g, "")
+  });
+});
