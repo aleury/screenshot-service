@@ -21,7 +21,7 @@ class ImageRenderer {
     return await scrollHeightHandle.jsonValue();
   }
 
-  async render({ html, width, height }) {
+  async render(html, { width, height } = { width: 650, height: null }) {
     const page = await this.browser.newPage();
 
     const content = html.replace(/\\n/g, "").replace(/\\/g, "");

@@ -21,6 +21,6 @@ const catchErrors = fn => async (req, res) => {
 };
 
 module.exports = catchErrors(async req => {
-  const conf = await json(req);
-  return await imageRenderer.render(conf);
+  const { html, width, height } = await json(req);
+  return await imageRenderer.render(html, { width, height });
 });
