@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "micro": "^9.3.4",
-    "puppeteer": "^1.17.0"
+    "puppeteer": "^1.17.0",
+    "puppeteer-cluster": "^0.16.0"
   },
   "devDependencies": {
     "micro-dev": "^3.0.0"

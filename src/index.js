@@ -1,15 +1,17 @@
 const { json } = require("micro");
-const ImageRenderer = require("./imageRenderer");
+const { Cluster } = require("puppeteer-cluster");
 
-let imageRenderer;
+let cluster;
+require("events").EventEmitter.defaultMaxListeners = 10;
 
-(async () => {
-  imageRenderer = await ImageRenderer.setup();
-})();
-
-process.once("SIGUSR2", async () => {
-  await imageRenderer.tearDown();
-});
+const computeScrollHeight = async page => {
+  const aHandle = await page.evaluateHandle(() => document.body);
+  const scrollHeightHandle = await page.evaluateHandle(
+    body => body.scrollHeight,
+    aHandle
+  );
+  return await scrollHeightHandle.jsonValue();
+};
 
 const catchErrors = fn => async (req, res) => {
   try {
@@ -21,6 +23,31 @@ const catchErrors = fn => async (req, res) => {
 };
 
 module.exports = catchErrors(async req => {
-  const { html, width, height } = await json(req);
-  return await imageRenderer.render(html, { width, height });
+  const { html, ...rest } = await json(req);
+  return await cluster.execute({
+    ...rest,
+    html: html.replace(/\\n/g, "").replace(/\\/g, "")
+  });
 });
+
+(async () => {
+  cluster = await Cluster.launch({
+    monitor: true,
+    maxConcurrency: 5,
+    concurrency: Cluster.CONCURRENCY_BROWSER
+  });
+
+  await cluster.task(async ({ page, data: { html, width, height } }) => {
+    await page.setContent(html);
+    const scrollHeight = await computeScrollHeight(page);
+    return await page.screenshot({
+      encoding: "binary",
+      clip: { x: 0, y: 0, width, height: height || scrollHeight }
+    });
+  });
+
+  process.once("SIGUSR2", async () => {
+    await cluster.idle();
+    await cluster.close();
+  });
+})();
