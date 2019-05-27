@@ -1,8 +1,7 @@
 const { json } = require("micro");
 const { Cluster } = require("puppeteer-cluster");
 
-const MAX_CONCURRENT = 5;
-require("events").EventEmitter.defaultMaxListeners = MAX_CONCURRENT;
+require("events").EventEmitter.defaultMaxListeners = 10;
 
 const computeScrollHeight = async page => {
   const aHandle = await page.evaluateHandle(() => document.body);
@@ -17,7 +16,7 @@ let cluster;
 
 (async () => {
   cluster = await Cluster.launch({
-    maxConcurrency: MAX_CONCURRENT,
+    maxConcurrency: 5,
     concurrency: Cluster.CONCURRENCY_BROWSER
   });
 
