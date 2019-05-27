@@ -1,3 +1,3 @@
 # screenshot-service
 
-Screenshot is built with Puppeteer.
+Renders html to a png image.

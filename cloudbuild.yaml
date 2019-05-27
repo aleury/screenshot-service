@@ -1,5 +1,19 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "gcr.io/$PROJECT_ID/screenshot", "."]
+    entrypoint: "bash"
+    args:
+      - "c"
+      - |
+        docker push gcr.io/$PROJECT_ID/screenshot:latest || exit 0
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "gcr.io/$PROJECT_ID/screenshot:latest",
+        "--cache-from",
+        "gcr.io/$PROJECT_ID/screenshot:latest",
+        ".",
+      ]
 images:
   - "gcr.io/$PROJECT_ID/screenshot"
