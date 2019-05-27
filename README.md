@@ -1,2 +1,3 @@
 # screenshot-service
-Screenshot service built with Puppeteer.
+
+Screenshot is built with Puppeteer.
