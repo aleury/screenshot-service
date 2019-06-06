@@ -1,16 +1,8 @@
-const { json } = require("micro");
+const { json, send } = require("micro");
 const { Cluster } = require("puppeteer-cluster");
+const renderHTMLToPNG = require("./render");
 
 require("events").EventEmitter.defaultMaxListeners = 10;
-
-const computeScrollHeight = async page => {
-  const aHandle = await page.evaluateHandle(() => document.body);
-  const scrollHeightHandle = await page.evaluateHandle(
-    body => body.scrollHeight,
-    aHandle
-  );
-  return await scrollHeightHandle.jsonValue();
-};
 
 let cluster;
 
@@ -20,14 +12,7 @@ let cluster;
     concurrency: Cluster.CONCURRENCY_BROWSER
   });
 
-  await cluster.task(async ({ page, data: { html, width, height } }) => {
-    await page.setContent(html);
-    const scrollHeight = await computeScrollHeight(page);
-    return await page.screenshot({
-      encoding: "binary",
-      clip: { x: 0, y: 0, width, height: height || scrollHeight }
-    });
-  });
+  await cluster.task(renderHTMLToPNG);
 
   process.once("SIGUSR2", async () => {
     await cluster.idle();
@@ -35,16 +20,16 @@ let cluster;
   });
 })();
 
-const catchErrors = fn => async (req, res) => {
+const handleErrors = fn => async (req, res) => {
   try {
-    const result = await fn(req);
-    res.end(result);
-  } catch (error) {
-    console.log(error);
+    return await fn(req);
+  } catch (err) {
+    console.error(err.stack);
+    send(res, 500, "An error occurred.");
   }
 };
 
-module.exports = catchErrors(async req => {
+module.exports = handleErrors(async req => {
   const { html, ...rest } = await json(req);
   return await cluster.execute({
     ...rest,
